@@ -217,5 +217,8 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Sample filings (too large for git)
+# Sample filings (already there)
 data/sample_filings/*.pdf
+
+# ChromaDB persistent storage (binary, large, regeneratable)
+data/chroma_db/
