@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Sample filings (too large for git)
+data/sample_filings/*.pdf
