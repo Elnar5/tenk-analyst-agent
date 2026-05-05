@@ -1,3 +1,14 @@
+---
+title: 10-K Analyst Agent
+emoji: 📊
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # 10-K Analyst Agent
 
 > Production-grade RAG agent for analyzing SEC 10-K filings.
