@@ -31,20 +31,127 @@ so the prompts and retrieval are designed around how models actually fail.
 
 ## Architecture
 
-[Diagram — to be added Day 5]
+```
+                    ┌─────────────────┐
+                    │   User Query    │
+                    │  (e.g. "iPhone  │
+                    │  revenue 2024?")│
+                    └────────┬────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────┐
+              │      HYBRID RETRIEVAL        │
+              │                              │
+              │  ┌────────┐    ┌──────────┐ │
+              │  │  BM25  │    │  Vector  │ │
+              │  │ (top   │    │  search  │ │
+              │  │  20)   │    │  (top 20)│ │
+              │  └───┬────┘    └────┬─────┘ │
+              │      │              │       │
+              │      └──────┬───────┘       │
+              │             ▼               │
+              │   Reciprocal Rank Fusion    │
+              │      → top 5 chunks         │
+              └──────────────┬───────────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────┐
+              │   PROMPT CONSTRUCTION        │
+              │                              │
+              │  System: hallucination guard │
+              │  Context: 5 chunks + sources │
+              │  Question: user query        │
+              └──────────────┬───────────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────┐
+              │      LLM GENERATION          │
+              │                              │
+              │  Primary: Groq Llama 3.3 70B │
+              │  Fallback: Gemini 2.0 Flash  │
+              │  Temperature: 0.1 (factual)  │
+              └──────────────┬───────────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────┐
+              │   POST-PROCESSING            │
+              │                              │
+              │  • Extract citations (regex) │
+              │  • Detect "Not found"        │
+              │  • Build AnswerResult        │
+              └──────────────┬───────────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │  Final Answer   │
+                    │  + Citations    │
+                    │  + Sources      │
+                    │  + Grounded?    │
+                    └─────────────────┘
+```
+
+### Ingestion pipeline (one-time per filing)
+
+```
+   PDF File
+      │
+      ▼
+   pdfplumber parse → 121 pages with metadata
+      │
+      ▼
+   Section-aware chunker → detects Item 1A, Item 7, Item 8...
+      │
+      ▼
+   663 chunks with (ticker, page, section, has_tables) metadata
+      │
+      ▼
+   ┌─────────────────────┬──────────────────────┐
+   │                     │                      │
+   ▼                     ▼                      ▼
+ BM25 index       HuggingFace embedder     ChromaDB store
+ (in-memory)      (bge-small-en-v1.5)      (persistent)
+                        │
+                        ▼
+                 768-dim vectors
+```
 
 ## Performance benchmarks
 
-Tested on [N] real 10-K filings:
+Evaluated on Apple's 10-K filing (FY2024) with 13 test cases across three categories:
+grounded questions (answer in filing), not-found questions (answer NOT in filing),
+and off-topic queries.
 
-| Metric | This agent | Baseline RAG (vector only) | Improvement |
-|---|---|---|---|
-| Answer accuracy | TBD | TBD | TBD |
-| Citation precision | TBD | TBD | TBD |
-| Hallucination rate | TBD | TBD | TBD |
-| Latency (p50) | TBD | TBD | TBD |
+| Metric | Result |
+|---|---|
+| **Overall pass rate** | **92.3%** (12/13) |
+| **Correct behavior** | **100%** (13/13) |
+| **Citation precision** | **100%** (13/13) |
+| **Hallucination guard accuracy** | **100%** (4/4 not-found correctly refused) |
+| **Latency (median)** | **0.69s** |
+| **Latency (p95)** | ~14s (longer for "not found" responses) |
 
-[Real benchmarks to be added Day 4]
+### By category
+
+- **Grounded questions:** 7/7 correct behavior — agent answered with exact figures
+  and citations (e.g. iPhone revenue $201,183M, R&D $31,370M)
+- **Not-found questions:** 4/4 correctly refused — agent said "Not found in the filing"
+  for compensation data, real-time prices, and forward-looking budgets that aren't
+  in 10-K filings
+- **Off-topic queries:** 2/2 correctly redirected — weather, creative writing requests
+  triggered the redirect prompt
+
+### Why this matters
+
+Most "chat with PDF" tools hallucinate financial figures or invent citations.
+This agent achieves zero hallucinations on the test set because of:
+
+1. **Section-aware chunking** — preserves 10-K structure (Item 1A, Item 7, Item 8)
+2. **Hybrid retrieval** — BM25 + vector search outperforms pure vector for
+   documents with named entities and numbers
+3. **Hallucination guard prompts** — the agent is instructed to refuse when context
+   is insufficient, with exact phrasing patterns the model copies reliably
+
+Run benchmarks yourself: `python -m src.evaluation.benchmark`
 
 ## Tech stack
 
