@@ -16,6 +16,24 @@ Then open http://localhost:8000
 import os
 import shutil
 import tempfile
+
+import logging
+import time
+from datetime import datetime
+
+# Setup analytics logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | ANALYTICS | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+analytics_log = logging.getLogger("analytics")
+
+
+def track_event(event: str, **kwargs):
+    """Log an analytics event. View in HuggingFace Spaces logs tab."""
+    extra = " | ".join(f"{k}={v}" for k, v in kwargs.items())
+    analytics_log.info(f"event={event} | {extra}") 
 from pathlib import Path
 from typing import Optional
 
@@ -219,7 +237,7 @@ async def analyze_pdf(file: UploadFile = File(...)):
     """Upload a 10-K PDF and build the agent."""
     if not file.filename.lower().endswith(".pdf"):
         return JSONResponse({"success": False, "error": "Only PDF files supported"})
-
+    track_event("pdf_upload_started", filename=file.filename, size_kb=0)
     try:
         # Save upload to temp
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
@@ -236,6 +254,12 @@ async def analyze_pdf(file: UploadFile = File(...)):
 
         os.unlink(tmp_path)
 
+        track_event(
+            "pdf_upload_success",
+            filename=file.filename,
+            chunks=chunk_count,
+            pages=page_count,
+        )
         return {
             "success": True,
             "chunks": chunk_count,
@@ -248,6 +272,7 @@ async def analyze_pdf(file: UploadFile = File(...)):
 @app.post("/ask")
 async def ask_question(question: str = Form(...)):
     """Ask a question against the loaded agent."""
+    track_event("question_asked", question_length=len(question))
     if "default" not in _agent_cache:
         return JSONResponse({
             "answer": "Please upload a 10-K PDF first.",
@@ -257,7 +282,12 @@ async def ask_question(question: str = Form(...)):
 
     agent = _agent_cache["default"]
     result = agent.ask(question)
-
+    track_event(
+        "question_answered",
+        grounded=result.is_grounded,
+        citations_count=len(result.citations),
+        answer_length=len(result.answer),
+    )
     return {
         "answer": result.answer,
         "citations": result.citations,
