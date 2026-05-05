@@ -232,7 +232,7 @@ async def analyze_pdf(file: UploadFile = File(...)):
 
         # Get stats
         chunk_count = len(agent.searcher.chunks)
-        page_count = max(c.metadata.get("page_number", 0) for c in agent.searcher.chunks)
+        page_count = max(c.page_number for c in agent.searcher.chunks)
 
         os.unlink(tmp_path)
 
