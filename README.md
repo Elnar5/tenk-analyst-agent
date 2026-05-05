@@ -9,6 +9,12 @@ pinned: false
 license: mit
 ---
 
+**🚀 Live Demo:** https://elnar5-tenk-analyst-agent.hf.space
+
+Upload any SEC 10-K PDF, ask questions, get cited answers grounded in the filing.
+
+---
+
 # 10-K Analyst Agent
 
 > Production-grade RAG agent for analyzing SEC 10-K filings.
