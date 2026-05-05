@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy source code
 COPY src/ /code/src/
-COPY data/sample_filings/ /code/data/sample_filings/
+
 
 # HuggingFace Spaces requires port 7860
 EXPOSE 7860
