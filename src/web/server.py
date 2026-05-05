@@ -37,7 +37,7 @@ def track_event(event: str, **kwargs):
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 
@@ -562,7 +562,7 @@ async function uploadPDF() {
     formData.append('file', fileInput.files[0]);
 
     try {
-        const res = await fetch('/analyze', { method: 'POST', body: formData });
+        const res = await fetch('/analyze' + window.location.search, { method: 'POST', body: formData });
         const data = await res.json();
         if (data.success) {
             status.className = 'status ok';
@@ -590,7 +590,7 @@ async function askQuestion() {
     answerDiv.innerHTML = '<div class="status loading" style="margin-top:20px;">Reading the filing...</div>';
 
     try {
-        const res = await fetch('/ask', {
+        const res = await fetch('/ask' + window.location.search, {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'question=' + encodeURIComponent(q),
@@ -628,11 +628,12 @@ function escapeHtml(text) {
 </html>"""
 
 @app.post("/analyze")
-async def analyze_pdf(file: UploadFile = File(...)):
-    """Upload a 10-K PDF and build the agent."""
+async def analyze_pdf(request: Request, file: UploadFile = File(...)):
+    is_owner = request.query_params.get("source") == "owner"
     if not file.filename.lower().endswith(".pdf"):
         return JSONResponse({"success": False, "error": "Only PDF files supported"})
-    track_event("pdf_upload_started", filename=file.filename, size_kb=0)
+    if not is_owner:
+        track_event("pdf_upload_started", filename=file.filename, size_kb=0)
     try:
         # Save upload to temp
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
@@ -649,12 +650,13 @@ async def analyze_pdf(file: UploadFile = File(...)):
 
         os.unlink(tmp_path)
 
-        track_event(
-            "pdf_upload_success",
-            filename=file.filename,
-            chunks=chunk_count,
-            pages=page_count,
-        )
+        if not is_owner:
+            track_event(
+                "pdf_upload_success",
+                filename=file.filename,
+                chunks=chunk_count,
+                pages=page_count,
+            )
         return {
             "success": True,
             "chunks": chunk_count,
@@ -665,9 +667,11 @@ async def analyze_pdf(file: UploadFile = File(...)):
 
 
 @app.post("/ask")
-async def ask_question(question: str = Form(...)):
+async def ask_question(request: Request, question: str = Form(...)):
+    is_owner = request.query_params.get("source") == "owner"
     """Ask a question against the loaded agent."""
-    track_event("question_asked", question_length=len(question))
+    if not is_owner:
+        track_event("question_asked", question_length=len(question))
     if "default" not in _agent_cache:
         return JSONResponse({
             "answer": "Please upload a 10-K PDF first.",
@@ -677,12 +681,13 @@ async def ask_question(question: str = Form(...)):
 
     agent = _agent_cache["default"]
     result = agent.ask(question)
-    track_event(
-        "question_answered",
-        grounded=result.is_grounded,
-        citations_count=len(result.citations),
-        answer_length=len(result.answer),
-    )
+    if not is_owner:
+        track_event(
+            "question_answered",
+            grounded=result.is_grounded,
+            citations_count=len(result.citations),
+            answer_length=len(result.answer),
+        )
     return {
         "answer": result.answer,
         "citations": result.citations,
