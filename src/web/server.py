@@ -166,7 +166,7 @@ async def analyze_pdf(request: Request, file: UploadFile = File(...)):
             return JSONResponse(
                 {
                     "success": False,
-                    "error": "Invalid or missing access code. Get yours at whop.com/sec-10k-analyst",
+                    "error": "Invalid or missing access code. Get yours at whop.com/aidigital-products-df1d/sec-10-k-analyst-ai-agent-with-verified-citations",
                 },
                 status_code=403,
             )
@@ -218,7 +218,7 @@ async def ask_question(request: Request, question: str = Form(...)):
         if not is_valid_password(password):
             return JSONResponse(
                 {
-                    "answer": "Access denied. Please purchase access at whop.com/sec-10k-analyst",
+                    "answer": "Access denied. Please purchase access at whop.com/aidigital-products-df1d/sec-10-k-analyst-ai-agent-with-verified-citations",
                     "citations": [],
                     "grounded": False,
                 },
@@ -449,9 +449,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <h2 class="section-head">Enter Access Code</h2>
             <p style="color: var(--ink-soft); margin-bottom: 16px;">
                 Your access code was sent to your email after purchase.
-                Don't have one? <a href="https://whop.com/sec-10k-analyst/" style="color: var(--accent);" target="_blank">Get access here.</a>
+                Don't have one? <a href="https://whop.com/aidigital-products-df1d/sec-10-k-analyst-ai-agent-with-verified-citations/" style="color: var(--accent);" target="_blank">Get access here.</a>
             </p>
-            <input type="text" id="accessCode" placeholder="e.g. demo-test-2026" autocomplete="off">
+            <input type="text" id="accessCode" placeholder="Paste your access code here" autocomplete="off">
             <button onclick="verifyAccess()" id="verifyBtn">Unlock</button>
             <div class="status" id="authStatus"></div>
         </section>
@@ -533,7 +533,7 @@ async function verifyAccess() {
             unlockUI();
         } else {
             status.className = 'status err';
-            status.textContent = '✕  Invalid access code. Get yours at whop.com/sec-10k-analyst';
+            status.textContent = '✕  Invalid access code. Get yours at whop.com/aidigital-products-df1d/sec-10-k-analyst-ai-agent-with-verified-citations';
         }
     } catch (e) {
         status.className = 'status err';
