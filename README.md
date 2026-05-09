@@ -8,7 +8,7 @@ app_port: 7860
 pinned: false
 license: mit
 ---
-
+> **🛒 Get verified access:** [Available on Whop](https://whop.com/aidigital-products-df1d/sec-10-k-analyst-ai-agent-with-verified-citations/) — 7-day free trial, then $9.99/month
 **🚀 Live Demo:** https://elnar5-tenk-analyst-agent.hf.space
 
 Upload any SEC 10-K PDF, ask questions, get cited answers grounded in the filing.
@@ -172,12 +172,14 @@ Run benchmarks yourself: `python -m src.evaluation.benchmark`
 
 ## Tech stack
 
-- **LLM:** Claude Sonnet 4 (primary), GPT-4o (fallback)
-- **Embeddings:** OpenAI text-embedding-3-small
+- **LLM:** Groq Llama 3.3 70B (primary), Gemini 2.0 Flash (fallback)
+- **Embeddings:** HuggingFace bge-small-en-v1.5 (local, no API dependency)
 - **Vector store:** ChromaDB (local persistence)
 - **BM25:** rank-bm25 for keyword matching
-- **Framework:** LangChain + LangGraph for agent orchestration
+- **Framework:** LangChain
 - **PDF parsing:** pdfplumber
+- **Backend:** FastAPI
+- **Deployment:** Docker + Hugging Face Spaces
 
 ## Setup
 
@@ -204,15 +206,19 @@ print(result.citations)
 
 ## Roadmap
 
-- [x] Day 1: Repo setup, scope, sample filings
-- [ ] Day 2-3: Core ingestion + retrieval
-- [ ] Day 4: Evaluation harness, benchmarks
-- [ ] Day 5: README polish, architecture diagram, demo
-- [ ] Week 2: MuleRun deployment, LinkedIn launch
+- [x] Core ingestion + retrieval (BM25 + vector + RRF)
+- [x] Evaluation harness, benchmarks (92.3% pass rate)
+- [x] FastAPI web interface
+- [x] Hugging Face Spaces deployment
+- [x] Whop marketplace listing
+- [ ] Multi-document retrieval for cross-company comparisons
+- [ ] Long quantitative tables handling
 
-## Live deployment
+## Get access
 
-Available on [MuleRun](https://mulerun.com/) — link added after launch.
+The full agent is available on [Whop](https://whop.com/aidigital-products-df1d/sec-10-k-analyst-ai-agent-with-verified-citations/) with a 7-day free trial.
+
+Free tier includes 3 PDFs/month. Pro ($9.99/mo) and Unlimited ($29.99/mo) plans available.
 
 ## About
 
