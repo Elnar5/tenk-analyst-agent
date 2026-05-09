@@ -141,6 +141,12 @@ _agent_cache: dict = {}
 def health():
     return {"status": "ok", "agent_loaded": "default" in _agent_cache}
 
+@app.get("/verify")
+def verify_password(request: Request):
+    """Check if password is valid (without exposing the list)."""
+    pw = request.query_params.get("pw", "")
+    return {"valid": is_valid_password(pw)}
+
 
 @app.get("/", response_class=HTMLResponse)
 def home():
@@ -506,15 +512,33 @@ function unlockUI() {
 async function verifyAccess() {
     const code = document.getElementById('accessCode').value.trim();
     const status = document.getElementById('authStatus');
+    
     if (!code) {
         status.className = 'status err';
         status.textContent = '✕  Please enter your access code.';
         return;
     }
-    accessCode = code;
-    status.className = 'status ok';
-    status.textContent = '✓  Access code accepted. You may now upload a filing.';
-    unlockUI();
+    
+    status.className = 'status loading';
+    status.textContent = 'Verifying access code...';
+    
+    try {
+        const res = await fetch('/verify?pw=' + encodeURIComponent(code));
+        const data = await res.json();
+        
+        if (data.valid) {
+            accessCode = code;
+            status.className = 'status ok';
+            status.textContent = '✓  Access code accepted. You may now upload a filing.';
+            unlockUI();
+        } else {
+            status.className = 'status err';
+            status.textContent = '✕  Invalid access code. Get yours at whop.com/sec-10k-analyst';
+        }
+    } catch (e) {
+        status.className = 'status err';
+        status.textContent = '✕  Verification failed. Try again.';
+    }
 }
 
 function buildQueryString(extras) {
