@@ -50,40 +50,15 @@ def track_event(event: str, **kwargs):
 # ============================================================================
 
 def load_passwords() -> set:
-    """Load valid passwords from passwords.txt (with debug logging)."""
-    pw_file = Path(__file__).parent.parent.parent / "passwords.txt"
+    """Load valid passwords from PASSWORDS environment variable.
     
-    # Debug: log the path and existence
-    analytics_log.info(f"DEBUG passwords path: {pw_file}")
-    analytics_log.info(f"DEBUG passwords exists: {pw_file.exists()}")
-    
-    # Also try alternate paths
-    cwd_path = Path("passwords.txt")
-    analytics_log.info(f"DEBUG cwd path: {cwd_path.absolute()}")
-    analytics_log.info(f"DEBUG cwd exists: {cwd_path.exists()}")
-    
-    try:
-        with open(pw_file, "r", encoding="utf-8") as f:
-            passwords = {
-                line.strip() for line in f
-                if line.strip() and not line.startswith("#")
-            }
-            analytics_log.info(f"DEBUG loaded {len(passwords)} passwords")
-            return passwords
-    except FileNotFoundError:
-        analytics_log.info(f"DEBUG FileNotFoundError at {pw_file}")
-        # Try cwd as fallback
-        try:
-            with open("passwords.txt", "r", encoding="utf-8") as f:
-                passwords = {
-                    line.strip() for line in f
-                    if line.strip() and not line.startswith("#")
-                }
-                analytics_log.info(f"DEBUG loaded from cwd: {len(passwords)} passwords")
-                return passwords
-        except FileNotFoundError:
-            analytics_log.info("DEBUG passwords.txt NOT FOUND anywhere")
-            return set()
+    Format: comma-separated list, e.g. "pw1,pw2,pw3"
+    Set via HuggingFace Spaces → Settings → Variables and secrets.
+    """
+    pw_string = os.environ.get("PASSWORDS", "")
+    if not pw_string:
+        return set()
+    return {p.strip() for p in pw_string.split(",") if p.strip()}
 
 
 def is_valid_password(pw: Optional[str]) -> bool:

@@ -222,3 +222,12 @@ data/sample_filings/*.pdf
 
 # ChromaDB persistent storage (binary, large, regeneratable)
 data/chroma_db/
+
+# Customer passwords (sensitive — never commit)
+passwords.txt
+
+# Customer passwords (managed via HuggingFace Secrets)
+passwords.txt
+
+# Customer passwords (managed via HuggingFace Secrets)
+passwords.txt
