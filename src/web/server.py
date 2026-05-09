@@ -50,9 +50,11 @@ def track_event(event: str, **kwargs):
 # ============================================================================
 
 def load_passwords() -> set:
-    """Load valid passwords from passwords.txt."""
+    """Load valid passwords from passwords.txt (project root)."""
+    # Path: src/web/server.py → src/web → src → root
+    pw_file = Path(__file__).parent.parent.parent / "passwords.txt"
     try:
-        with open("passwords.txt", "r", encoding="utf-8") as f:
+        with open(pw_file, "r", encoding="utf-8") as f:
             return {
                 line.strip() for line in f
                 if line.strip() and not line.startswith("#")
